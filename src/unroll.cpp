@@ -3,7 +3,7 @@
 
 // The idea here is to iterate a list, summing the values
 
-#define LIST_SIZE 262000
+#define LIST_SIZE 10000
 #define LIST_TYPE int
 using lt = std::array<LIST_TYPE, LIST_SIZE>; 
 
@@ -47,6 +47,16 @@ static auto unrolled(const lt& data)
     return sum0 + sum1 + sum2 + sum3;
 }
 
+template <std::size_t... Is>
+static auto complete_unroll(const lt& data, std::index_sequence<Is...> inds)
+{
+    int a = 0;
+
+    a += (data[Is] + ... );
+
+    return a;
+}
+
 int main()
 {
     gen<LIST_TYPE, LIST_SIZE> g;
@@ -57,7 +67,11 @@ int main()
 #ifdef UNROLL
         unrolled(data);
 #else
+    #ifdef COMP_UNROLL
+        complete_unroll(data, std::make_index_sequence<LIST_SIZE>());
+    #else
         rolled(data);
+    #endif
 #endif
     }
 
