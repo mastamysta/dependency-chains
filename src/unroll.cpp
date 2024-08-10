@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cstdint>
 #include <array>
 
@@ -57,23 +58,52 @@ static auto complete_unroll(const lt& data, std::index_sequence<Is...> inds)
     return a;
 }
 
+template <std::size_t STEP, std::size_t... Is>
+static auto helper(const lt& data, std::index_sequence<Is...> inds)
+{
+    int a = 0, b = 0, c = 0, d = 0;
+
+    a += (data[STEP * Is] + ... );
+    b += (data[STEP * Is + 1] + ... );
+    c += (data[STEP * Is + 2] + ... );
+    d += (data[STEP * Is + 3] + ... );
+
+    return a + b + c + d;
+}
+
+template <std::size_t SIZE, std::size_t STEP>
+static auto complete_unroll_macc(const lt& data)
+{
+    constexpr std::size_t ind_seq_siz = SIZE / STEP;
+
+    return helper<STEP>(data, std::make_index_sequence<ind_seq_siz>());
+}
+
 int main()
 {
     gen<LIST_TYPE, LIST_SIZE> g;
     constexpr auto data = g();
 
+    int ret;
+
     for (int i = 0; i < 100000; i++)
     {
 #ifdef UNROLL
-        unrolled(data);
+        ret = unrolled(data);
 #else
     #ifdef COMP_UNROLL
-        complete_unroll(data, std::make_index_sequence<LIST_SIZE>());
+        ret = complete_unroll(data, std::make_index_sequence<LIST_SIZE>());
     #else
-        rolled(data);
+        #ifdef COMP_MUNROLL
+            ret = complete_unroll_macc<LIST_SIZE, 4>(data);
+        #else
+            ret = rolled(data);
+        #endif
     #endif
 #endif
     }
+
+//    std::cout << ret << "\n";
 
     return 0;
 }
